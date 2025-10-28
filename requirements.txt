@@ -5,6 +5,11 @@ jupyter
 langchain
 langchain-openai
 langchain-community
+langchain-chroma
+langchain-text-splitters
+langchain-upstage
+chromadb
 faiss-cpu
 pydantic
 pdfplumber
+python-dotenv

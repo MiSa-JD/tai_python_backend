@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from .classes.responses import SearchResultOutput
+from .classes.requests import SearchRequest
 
 
 def create_app() -> FastAPI:
@@ -10,10 +12,17 @@ def create_app() -> FastAPI:
         """Health-check endpoint used by dev notebooks and monitoring."""
         return {"status": "ok"}
 
-    @app.get("/items/{item_id}")
-    async def read_item(item_id: int, q: str | None = None) -> dict[str, int | str | None]:
-        """Return sample payload to illustrate path and query parameters."""
-        return {"item_id": item_id, "q": q}
+    @app.post("/api/request")
+    async def searchAndDecorate(data: SearchRequest) -> SearchResultOutput:
+        tmp = SearchResultOutput(
+            keyword=data.keyword,
+            description="요약",
+            content="LLM의 답변",
+            tags=["태그1", "태그2"],
+            category="카테고리",
+            refered=["링크1", "링크2"],
+        )
+        return tmp
 
     return app
 
