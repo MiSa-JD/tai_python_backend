@@ -1,3 +1,12 @@
+---
+name: "✅기능 이슈"
+about: 기능 작업 사항을 입력해주세요.
+title: "[feature] 이슈"
+labels: ''
+assignees: ''
+
+---
+
 # ✅기능 이슈
 
 ## Description
