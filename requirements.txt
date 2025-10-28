@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+httpx
+jupyter
+langchain
+langchain-openai
+langchain-community
+faiss-cpu
+pydantic
+pdfplumber
