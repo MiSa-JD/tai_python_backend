@@ -32,3 +32,6 @@ workflow.set_entry_point("collect_sources")
 workflow.set_finish_point("classify_and_package")
 
 app = workflow.compile()
+
+print("build graph")
+print("=== LangGraph Ready ===")

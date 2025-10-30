@@ -75,3 +75,6 @@ def news_crawling(keyword):
     href_links = get_keyword_news(keyword)
     news_results = get_news_from_naver(keyword, href_links)
     return news_results
+
+
+print("=== Crawler Ready ===")

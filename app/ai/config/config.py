@@ -19,3 +19,5 @@ retriever = vstore.as_retriever(
 
 # 연관 되어있는 것으로 볼 범위
 THRESHOLD = 1.55
+
+print("configurate RAG settings")

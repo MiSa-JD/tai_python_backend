@@ -12,3 +12,5 @@ llm_validate = ChatUpstage(model="solar-pro2", temperature=0.7)
 llm_summarize = ChatUpstage(model="solar-mini", temperature=0.7)
 
 llm_classify = ChatUpstage(model="solar-mini", temperature=0.7)
+
+print("select models")
