@@ -19,3 +19,4 @@ dataclasses
 bs4
 time
 requests
+dotenv
