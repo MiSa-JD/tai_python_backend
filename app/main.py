@@ -2,7 +2,8 @@ from fastapi import FastAPI
 
 from .classes.responses import SearchResultOutput
 from .classes.requests import SearchRequest
-from app.crawling import news_crawling
+from .ai.graph_builder import app as pipeline
+import json
 
 
 def create_app() -> FastAPI:
@@ -16,22 +17,29 @@ def create_app() -> FastAPI:
 
     @app.post("/api/request")
     async def searchAndDecorate(data: SearchRequest) -> SearchResultOutput:
-        newses = news_crawling(data.keyword)
+        keyword = data.keyword
 
-        for news in newses:
-            print ("Keyword:", news['keyword'])
-            print("Url:", news['url'])
-            print("Title:", news['title'])
-            print("Content:", news['content'])
-            print("-" * 80)
+        initial_state = {"keyword": keyword}
+
+        output = pipeline.invoke(initial_state)
+
+        # tmp = SearchResultOutput(
+        #     keyword=data.keyword,
+        #     description="요약",
+        #     content="LLM의 답변",
+        #     tags=["태그1", "태그2"],
+        #     category="카테고리",
+        #     refered=["링크1", "링크2"],
+        # )
+        get_summarize = json.loads(output["summarize_and_classify"])
 
         tmp = SearchResultOutput(
-            keyword=data.keyword,
-            description="요약",
-            content="LLM의 답변",
-            tags=["태그1", "태그2"],
-            category="카테고리",
-            refered=["링크1", "링크2"],
+            keyword=output["keyword"],
+            description=get_summarize["summarize"],
+            content=output["trend_analysis"]["answer"],
+            tags=get_summarize["tags"],
+            category=get_summarize["category"],
+            refered=output["trend_analysis"]["link"],
         )
         return tmp
 
