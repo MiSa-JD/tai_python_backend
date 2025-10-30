@@ -21,7 +21,7 @@ def create_app() -> FastAPI:
 
         initial_state = {"keyword": keyword}
 
-        output = pipeline.invoke(initial_state)
+        output = await pipeline.ainvoke(initial_state)
 
         # tmp = SearchResultOutput(
         #     keyword=data.keyword,
@@ -47,3 +47,8 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+print("*" * 52)
+print("FastAPI is running on http://localhost:8000")
+print("Checkout Swagger page on http://localhost:8000/docs")
+print("*" * 52)
