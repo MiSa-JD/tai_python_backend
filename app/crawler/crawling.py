@@ -5,8 +5,6 @@ import time
 
 def get_keyword_news(keyword):
     href_links = []
-    # 크롤링 할 기사의 개수를 조정합니다.
-    limit_cnt = 5
 
     origin_url = f"https://search.naver.com/search.naver?where=news&query={keyword}"
 
@@ -20,10 +18,6 @@ def get_keyword_news(keyword):
         if anchor_tag:
             href = anchor_tag.get("href")
             href_links.append(href)
-        
-        if len(href_links) >= limit_cnt:
-            break
-
     return href_links
 
 
@@ -46,17 +40,18 @@ def get_news_from_naver(keyword, urls):
             content_tag = soup.find("div", class_="newsct_article")
             title = title_tag.find("span").get_text(strip=True)
             content = content_tag.get_text(strip=True)
-        elif 'm.sports.naver.com' in url:
-            title_tag = soup.find('h2', class_='ArticleHead_article_title__qh8GV')
-            content_tag = soup.find('div', class_='ArticleContent_comp_article_content__luOFM')
+        elif "m.sports.naver.com" in url:
+            title_tag = soup.find("h2", class_="ArticleHead_article_title__qh8GV")
+            content_tag = soup.find(
+                "div", class_="ArticleContent_comp_article_content__luOFM"
+            )
             title = title_tag.get_text(strip=True)
             content = content_tag.get_text(strip=True)
-
         else:
             print("Unsupported URL format:", url)
 
         results.append(
-            {"keyword": keyword, "url": url, "title": title, "content": content}
+            {"keyword": keyword, "link": url, "title": title, "content": content}
         )
         time.sleep(0.2)
     return results
