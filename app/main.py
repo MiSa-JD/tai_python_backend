@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+
 from .classes.responses import SearchResultOutput
 from .classes.requests import SearchRequest
+from app.crawling import news_crawling
 
 
 def create_app() -> FastAPI:
@@ -14,6 +16,15 @@ def create_app() -> FastAPI:
 
     @app.post("/api/request")
     async def searchAndDecorate(data: SearchRequest) -> SearchResultOutput:
+        newses = news_crawling(data.keyword)
+
+        for news in newses:
+            print ("Keyword:", news['keyword'])
+            print("Url:", news['url'])
+            print("Title:", news['title'])
+            print("Content:", news['content'])
+            print("-" * 80)
+
         tmp = SearchResultOutput(
             keyword=data.keyword,
             description="요약",
