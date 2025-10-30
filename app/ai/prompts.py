@@ -92,13 +92,13 @@ ALLOWED_CATEGORIES = [
 
 classifier_form = """
 {
-    "summarize"="내용 요약",
-    "tags"=[
+    "summarize":"내용 요약",
+    "tags":[
         "태그1",
         "태그2",
         ...
     ]
-    "category="카테고리"
+    "category:"카테고리"
 }
 """
 classifier_prompt = f"""
@@ -109,4 +109,4 @@ classifier_prompt = f"""
 for category in ALLOWED_CATEGORIES:
     classifier_prompt += "- " + category + "\n"
 
-print(classifier_prompt)
+print("load prompts")
