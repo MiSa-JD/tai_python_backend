@@ -35,7 +35,7 @@ def collect_sources(state):
 
 # 데이터 임베딩
 def embed_and_store(state):
-    print("수집한 문서 임베딩 중")
+    print(f"수집한 문서 임베딩 중: {state['keyword']}")
     # 문서별 embedding 계산 -> VDB에 저장
     raws = state.get("raw_documents", [])
     if len(raws) == 0:
@@ -49,7 +49,7 @@ def embed_and_store(state):
 
 # VDB에서 Retrieve
 def retrieve_from_vdb(state):
-    print("데이터 검색 중")
+    print(f"데이터 검색 중: {state['keyword']}")
     retrieved = search_documents(state["keyword"])
     state["retrieved_documents"] = (
         retrieved  # 예: [{"content":..., "link":..., ...}, ...]
@@ -59,13 +59,17 @@ def retrieve_from_vdb(state):
 
 # 각 문서 검증
 def validate_relevance(state):
-    print("각 문서 검증")
+    print(f"각 문서 검증: {state['keyword']}")
     validated = []
     if len(state.get("retrieved_documents", [])) == 0:
         return state
     for doc in state["retrieved_documents"]:
         raw = validator_llm(keyword=state["keyword"], prompt=doc.page_content)
-        judgment = json.loads(raw)
+        try:
+            judgment = json.loads(raw)
+        except json.JSONDecodeError:
+            print("검증자가 json 형식으로 대답하지 않았습니다!!: %r", raw)
+            continue
         if judgment["validation"] == "yes":
             validated.append(
                 Document(
@@ -79,7 +83,7 @@ def validate_relevance(state):
 
 # 원문 요약
 def summarize_news_individual(state):
-    print("원문 요약 중")
+    print(f"원문 요약 중: {state['keyword']}")
     summaries = []
     for doc in state.get("raw_documents", []):
         summary = summarizer_llm(doc["content"])
@@ -90,7 +94,7 @@ def summarize_news_individual(state):
 
 # 분석 및 이유 작성
 def analyze_trend_reason(state):
-    print("결론 요약본 생성 중")
+    print(f"결론 요약본 생성 중: {state['keyword']}")
     raw = analyst_llm(
         keyword=state["keyword"],
         docs=state.get("validated_documents", []),
@@ -103,9 +107,14 @@ def analyze_trend_reason(state):
 
 # 태그, 카테고리 붙이기
 def classify_and_package(state):
-    print("태그, 카테고리 붙이는 중 ")
+    print(f"태그, 카테고리 붙이는 중 {state['keyword']}")
     packaged = classifier_llm(
-        prompt=state["trend_analysis"]["answer"],
+        prompt=state["trend_analysis"].get("answer", ""),
     )
     state["summarize_and_classify"] = packaged
+
+    print(f"검색 완료: {state['keyword']}")
     return state
+
+
+print("define state and nodes")

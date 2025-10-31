@@ -70,3 +70,6 @@ def classifier_llm(prompt: str) -> str:
 
     # result는 보통 AIMessage 객체이며 .content에 텍스트가 들어 있습니다.
     return result.content.strip()
+
+
+print("load llm callers")

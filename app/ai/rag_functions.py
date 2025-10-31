@@ -59,3 +59,7 @@ def embed_documents(datas: list[SearchResult]):
     vstore.add_documents(docs)
 
     return {"result": "complete"}
+
+
+print("define functions for RAG")
+print("=== RAG Ready ===")
