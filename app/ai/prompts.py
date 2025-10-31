@@ -25,7 +25,7 @@ def analyst_prompt(keyword: str, form: str):
 여러개의 문서 중 유사한 주제로 3개 이상 동시에 발견되어야합니다.
 감정적 단어나 추측적 표현("~일 것이다")은 피하고, 실제 문서 근거를 기반으로 결론을 도출합니다.\
 
-출력 형식은 다음과 같이 JSON으로 주십시오: {form}
+출력 형식은 다음과 같이 JSON으로 주십시오. 코드 블럭을 사용하지 마십시오: {form}
 """
 
 
@@ -61,12 +61,12 @@ def validator_prompt(keyword: str, form: str):
 이 내용은 벡터DB에서 {keyword}로 검색되었습니다.
 실제로 해당 내용과 관련이 있는지 간단한 문구와 함께 검증하시오.
 
-다음과 같은 양식으로 한 줄로 작성해야 합니다: {form}
+다음과 같은 Json 양식으로 한 줄로 작성해야 합니다. 코드 블럭을 사용하지 마십시오: {form}
 """
 
 
 # 요약자
-summarizer_prompt = "다음 뉴스를 300자 내로 정리하십시오:"
+summarizer_prompt = "다음 뉴스를 75자 내로 정리하십시오:"
 
 # 분류자
 # 먼저 정의된 카테고리 목록
@@ -98,7 +98,7 @@ classifier_form = """
         "태그2",
         ...
     ]
-    "category:"카테고리"
+    "category":"카테고리"
 }
 """
 classifier_prompt = f"""
