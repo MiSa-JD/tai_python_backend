@@ -23,18 +23,10 @@ def analyst_prompt(keyword: str, form: str):
 근거는 반드시 문서만을 참고하여 주십시오.
 각 문서마다 핵심 이슈를 요약하여 유사한 문서가 있는지 확인해야합니다.
 여러개의 문서 중 유사한 주제로 3개 이상 동시에 발견되어야합니다.
-감정적 단어나 추측적 표현("~일 것이다")은 피하고, 실제 문서 근거를 기반으로 결론을 도출합니다.\
+감정적 단어나 추측적 표현("~일 것이다")은 피하고, 실제 문서 근거를 기반으로 결론을 도출합니다.
+문서에 존재하지 않는 문구를 출력하지 않습니다.
 
 출력 형식은 다음과 같이 JSON으로 주십시오. 코드 블럭을 사용하지 마십시오: {form}
-"""
-
-
-# 검증자
-validator_form = """
-{
-    "validation": "yes" 또는 "no",
-    "reason": "판단의 이유 한 두 줄로 설명"
-}
 """
 
 
@@ -55,13 +47,22 @@ def analyst_input_prompt(searched_documents: list[Document], news: list[str]) ->
     return prompt
 
 
+# 검증자
+validator_form = """
+{
+    "validation": "yes" 또는 "no",
+    "reason": "판단의 이유 한 두 줄로 설명"
+}
+"""
+
+
 def validator_prompt(keyword: str, form: str):
     return f"""
 당신은 엄격한 리뷰어 입니다.
 이 내용은 벡터DB에서 {keyword}로 검색되었습니다.
 실제로 해당 내용과 관련이 있는지 간단한 문구와 함께 검증하시오.
 
-다음과 같은 Json 양식으로 한 줄로 작성해야 합니다. 코드 블럭을 사용하지 마십시오: {form}
+다음과 같은 Json 양식으로 한 줄로 작성해야 합니다. 추가적인 정보를 덧붙이지 마십시오. 코드 블럭을 사용하지 마십시오: {form}
 """
 
 
