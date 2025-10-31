@@ -98,7 +98,7 @@ classifier_form = """
         "태그2",
         ...
     ]
-    "category:"카테고리"
+    "category":"카테고리"
 }
 """
 classifier_prompt = f"""
