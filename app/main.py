@@ -1,14 +1,29 @@
+import os
+import json
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .classes.responses import SearchResultOutput
 from .classes.requests import SearchRequest
 from .ai.graph_builder import app as pipeline
-import json
 
 
 def create_app() -> FastAPI:
     """Factory to build the FastAPI application."""
     app = FastAPI(title="AiBackend API")
+
+    origin_env = os.getenv("FASTAPI_ALLOWED_ORIGINS", "")
+    allowed_origins = allowed_origins = [
+        origin.strip() for origin in origin_env.split(",") if origin.strip()
+    ]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins or ["http://localhost:8000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.get("/ping")
     async def ping() -> dict[str, str]:
