@@ -67,7 +67,7 @@ def validator_prompt(keyword: str, form: str):
 
 
 # 요약자
-summarizer_prompt = "다음 뉴스를 75자 내로 정리하십시오:"
+summarizer_prompt = "다음 뉴스를 75자 내로 정말 간단히 한 줄로 정리하십시오:"
 
 # 분류자
 # 먼저 정의된 카테고리 목록
