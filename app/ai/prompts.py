@@ -67,7 +67,7 @@ def validator_prompt(keyword: str, form: str):
 
 
 # 요약자
-summarizer_prompt = "다음 뉴스를 75자 내로 정말 간단히 한 줄로 정리하십시오:"
+summarizer_prompt = "다음 뉴스를 300자 내로 정리하십시오:"
 
 # 분류자
 # 먼저 정의된 카테고리 목록
@@ -103,7 +103,7 @@ classifier_form = """
 }
 """
 classifier_prompt = f"""
-해당 내용을 요약하고, 태그와 카테고리를 생성해주십시오.
+해당 내용을 정말 간단히 75자 내로 요약하고, 태그와 카테고리를 생성해주십시오.
 출력 양식은 다음과 같이 Json 형식으로 작성해야합니다: {classifier_form}
 태그는 아무 단어나 상관 없지만, 카테고리는 다음 중 하나를 선택해야 합니다:
 """
