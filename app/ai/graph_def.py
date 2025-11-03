@@ -65,10 +65,10 @@ def validate_relevance(state):
         return state
     for doc in state["retrieved_documents"]:
         raw = validator_llm(keyword=state["keyword"], prompt=doc.page_content)
-        if raw.find("```json"):
-            raw.replace("```json", "")
-        if raw.find("```"):
-            raw.replace("```", "")
+        if raw.find("```json") is not -1:
+            raw = raw.replace("```json", "")
+        if raw.find("```") is not -1:
+            raw = raw.replace("```", "")
         try:
             judgment = json.loads(raw)
         except json.JSONDecodeError:
@@ -104,11 +104,14 @@ def analyze_trend_reason(state):
         docs=state.get("validated_documents", []),
         summaries=state.get("news_summaries", []),
     )
-    if raw.find("```json"):
-        raw.replace("```json", "")
-    if raw.find("```"):
-        raw.replace("```", "")
-    trend_json = json.loads(raw)
+    if raw.find("```json") is not -1:
+        raw = raw.replace("```json", "")
+    if raw.find("```") is not -1:
+        raw = raw.replace("```", "")
+    try:
+        trend_json = json.loads(raw)
+    except json.JSONDecodeError:
+        return analyze_trend_reason(state=state)
     state["trend_analysis"] = trend_json  # {"answer": "...", "link": ["...", "..."]}
     return state
 
