@@ -122,6 +122,12 @@ def classify_and_package(state):
     packaged = classifier_llm(
         prompt=state["trend_analysis"].get("answer", ""),
     )
+    if packaged.find("```json") != -1 or packaged.find("```") != -1:
+        packaged = packaged.replace("```json", "").replace("```", "")
+    try:
+        packaged = json.loads(packaged)
+    except json.JSONDecodeError:
+        return classify_and_package(state)
     state["summarize_and_classify"] = packaged
 
     print(f"검색 완료: {state['keyword']}")
