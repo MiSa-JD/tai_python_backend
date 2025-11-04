@@ -1,16 +1,16 @@
-import requests
+from httpx import AsyncClient
+import asyncio
 from bs4 import BeautifulSoup
-import time
 
 
-def get_keyword_news(keyword):
+async def get_keyword_news(keyword):
     href_links = []
     # 크롤링 할 기사의 개수를 조정합니다.
     limit_cnt = 10
 
     origin_url = f"https://search.naver.com/search.naver?where=news&query={keyword}"
-
-    response = requests.get(origin_url)
+    async with AsyncClient() as client:
+        response = await client.get(url=origin_url)
     soup = BeautifulSoup(response.content, "html.parser")
 
     naver_spans = soup.find_all("span", string="네이버뉴스")
@@ -27,12 +27,13 @@ def get_keyword_news(keyword):
     return href_links
 
 
-def get_news_from_naver(keyword, urls):
+async def get_news_from_naver(keyword, urls):
     results = []
     title = ""
     content = ""
     for url in urls:
-        response = requests.get(url)
+        async with AsyncClient() as client:
+            response = await client.get(url=url)
         soup = BeautifulSoup(response.content, "html.parser")
 
         if "entertain.naver.com" in url:
@@ -67,13 +68,13 @@ def get_news_from_naver(keyword, urls):
         results.append(
             {"keyword": keyword, "link": url, "title": title, "content": content}
         )
-        time.sleep(0.2)
+        await asyncio.sleep(0.2)
     return results
 
 
-def news_crawling(keyword):
-    href_links = get_keyword_news(keyword)
-    news_results = get_news_from_naver(keyword, href_links)
+async def news_crawling(keyword):
+    href_links = await get_keyword_news(keyword)
+    news_results = await get_news_from_naver(keyword, href_links)
     return news_results
 
 
