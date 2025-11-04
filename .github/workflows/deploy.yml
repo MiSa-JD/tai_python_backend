@@ -9,6 +9,12 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      - name: Load .env
+        run: |
+          cat << 'EOF' > .env
+          ${{ secrets.PY_ENV_FILE }}
+          EOF
+
       - name: Checkout branch
         uses: actions/checkout@v4
 
