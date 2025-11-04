@@ -1,68 +1,57 @@
 from langchain.schema import Document
-from app.classes.responses import SearchResult
+from app.classes.ai import GraphState
 from app.crawler.crawling import news_crawling
 from app.ai.rag_functions import embed_documents, search_documents
 from app.ai.llm_caller import validator_llm, analyst_llm, classifier_llm, summarizer_llm
 import json
 
-# 상태 정의
-State = {
-    "keyword": str,  # 분석 대상 키워드
-    "raw_documents": [
-        SearchResult
-    ],  # 크롤링/뉴스 등 원문 문서들 (content, link, source 등)
-    "embedded_documents": [dict],  # 임베딩 후 VDB에 저장된 문서 메타
-    "retrieved_documents": [Document],  # VDB에서 keyword 기반으로 가져온 후보 문서들
-    "validated_documents": [
-        Document
-    ],  # 키워드와 실제로 관련 있다고 LLM이 yes 준 문서들
-    "news_summaries": [str],  # 뉴스 개별 요약 결과들
-    "trend_analysis": dict,  # 트렌드 원인 분석 (LLM 결과: answer + link[])
-    "summarize_and_classify": dict,  # 최종 JSON (keyword, description, content, tags, category, refered)
-}
-
 
 # 노드 정의
+# 진입 노드
+def entry_node(state: GraphState) -> GraphState:
+    print(f"과정 시작: {state['keyword']} | ")
+    return {}
+
+
 # 데이터 수집 부분
-def collect_sources(state):
-    print(f"데이터 수집 중: {state['keyword']}")
+def collect_sources(state: GraphState) -> GraphState:
+    print(f"데이터 수집 중: {state['keyword']} | ")
     # 1) keyword로 외부 소스 크롤링
     fetched_docs = news_crawling(state["keyword"])
     # 2) 결과를 [{"keyword": ..., "link": ..., "content": ...}, ...] 형태로 수집
-    state["raw_documents"] = fetched_docs
-    return state
+    return {"raw_documents": fetched_docs}
 
 
 # 데이터 임베딩
-def embed_and_store(state):
-    print(f"수집한 문서 임베딩 중: {state['keyword']}")
+def embed_and_store(state: GraphState) -> GraphState:
+    print(f"수집한 문서 임베딩 중: {state['keyword']} | ")
     # 문서별 embedding 계산 -> VDB에 저장
     raws = state.get("raw_documents", [])
     if len(raws) == 0:
-        return state
+        return {}
     docs = embed_documents(raws)
     # 저장 후, vector_id 등 메타 정리
     # 저장 결과 출력
-    state["embedded_documents"] = docs
-    return state
+    print(f"** 검색어: '{state['keyword']}' 임베딩 성공 **\n")
+    return {"embedded_documents": docs}
 
 
 # VDB에서 Retrieve
-def retrieve_from_vdb(state):
-    print(f"데이터 검색 중: {state['keyword']}")
+def retrieve_from_vdb(state: GraphState) -> GraphState:
+    print(f"데이터 검색 중: {state['keyword']} | ")
     retrieved = search_documents(state["keyword"])
-    state["retrieved_documents"] = (
-        retrieved  # 예: [{"content":..., "link":..., ...}, ...]
-    )
-    return state
+
+    return {"retrieved_documents": retrieved}
 
 
 # 각 문서 검증
-def validate_relevance(state):
-    print(f"각 문서 검증: {state['keyword']}")
+def validate_relevance(state: GraphState) -> GraphState:
+    print(f"각 문서 검증: {state['keyword']} | ")
     validated = []
     if len(state.get("retrieved_documents", [])) == 0:
-        return state
+        return {
+            "completed": {**state.get("completed", {}), "validation": True},
+        }
     for doc in state["retrieved_documents"]:
         raw = validator_llm(keyword=state["keyword"], prompt=doc.page_content)
         if raw.find("```json") != -1:
@@ -81,24 +70,42 @@ def validate_relevance(state):
                     metadata={**doc.metadata, "reason": judgment["reason"]},
                 )
             )
-    state["validated_documents"] = validated
-    return state
+    print(f"** 검색어: '{state['keyword']}' RAG 프로세스 완료 **\n")
+    return {
+        "validated_documents": validated,
+        "completed": {**state.get("completed", {}), "validation": True},
+    }
 
 
 # 원문 요약
-def summarize_news_individual(state):
-    print(f"원문 요약 중: {state['keyword']}")
+def summarize_news_individual(state: GraphState) -> GraphState:
+    print(f"원문 요약 중: {state['keyword']} | ")
     summaries = []
     for doc in state.get("raw_documents", []):
         summary = summarizer_llm(doc["content"])
         summaries.append({"link": doc["link"], "summary": summary})
-    state["news_summaries"] = summaries
-    return state
+    print(f"** 검색어: '{state['keyword']}' 크롤링 프로세스 완료 **\n")
+    return {
+        "news_summaries": summaries,
+        "completed": {**state.get("completed", {}), "news": True},
+    }
+
+
+def analyze_join_node(state: GraphState) -> GraphState:
+    print(f"조인 노드 도착: {state['keyword']} | ")
+    # 결과가 모두 준비 됐을 때 return, 아닐때는??
+    completed = state.get("completed", {})
+    ready = completed.get("news") and completed.get("validation")
+    if completed.get("news") and not completed.get("validation"):
+        print("검증자 기다리는 중...")
+    if not completed.get("news") and completed.get("validation"):
+        print("요약자 기다리는 중...")
+    return {"ready_for_analysis": ready}
 
 
 # 분석 및 이유 작성
-def analyze_trend_reason(state):
-    print(f"결론 요약본 생성 중: {state['keyword']}")
+def analyze_trend_reason(state: GraphState) -> GraphState:
+    print(f"결론 요약본 생성 중: {state['keyword']} | ")
     raw = analyst_llm(
         keyword=state["keyword"],
         docs=state.get("validated_documents", []),
@@ -112,13 +119,12 @@ def analyze_trend_reason(state):
         trend_json = json.loads(raw)
     except json.JSONDecodeError:
         return analyze_trend_reason(state=state)
-    state["trend_analysis"] = trend_json  # {"answer": "...", "link": ["...", "..."]}
-    return state
+    return {"trend_analysis": trend_json}
 
 
 # 태그, 카테고리 붙이기
-def classify_and_package(state):
-    print(f"태그, 카테고리 붙이는 중 {state['keyword']}")
+def classify_and_package(state: GraphState) -> GraphState:
+    print(f"태그, 카테고리 붙이는 중 {state['keyword']} | ")
     packaged = classifier_llm(
         prompt=state["trend_analysis"].get("answer", ""),
     )
@@ -128,10 +134,9 @@ def classify_and_package(state):
         packaged = json.loads(packaged)
     except json.JSONDecodeError:
         return classify_and_package(state)
-    state["summarize_and_classify"] = packaged
 
-    print(f"검색 완료: {state['keyword']}")
-    return state
+    print(f"**** 조사 완료: '{state['keyword']}' ****\n")
+    return {"summarize_and_classify": packaged}
 
 
 print("define state and nodes")

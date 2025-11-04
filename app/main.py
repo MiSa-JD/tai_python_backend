@@ -1,5 +1,5 @@
 import os
-import json
+import time
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -33,19 +33,13 @@ def create_app() -> FastAPI:
     @app.post("/api/request")
     async def searchAndDecorate(data: SearchRequest) -> SearchResultOutput:
         keyword = data.keyword
-
         initial_state = {"keyword": keyword}
 
+        start = time.perf_counter()
         output = await pipeline.ainvoke(initial_state)
+        elapsed = time.perf_counter() - start
+        print(f"Pipeline finished in {elapsed} seconds (keyword={keyword})")
 
-        # tmp = SearchResultOutput(
-        #     keyword=data.keyword,
-        #     description="요약",
-        #     content="LLM의 답변",
-        #     tags=["태그1", "태그2"],
-        #     category="카테고리",
-        #     refered=["링크1", "링크2"],
-        # )
         get_summarize = output["summarize_and_classify"]
 
         tmp = SearchResultOutput(
