@@ -1,4 +1,5 @@
 from httpx import AsyncClient
+import httpx
 import asyncio
 from bs4 import BeautifulSoup
 
@@ -10,7 +11,7 @@ async def get_keyword_news(keyword):
 
     origin_url = f"https://search.naver.com/search.naver?where=news&query={keyword}"
     async with AsyncClient() as client:
-        response = await client.get(url=origin_url)
+        response = await client.get(url=origin_url, timeout=httpx.Timeout(120.0))
     soup = BeautifulSoup(response.content, "html.parser")
 
     naver_spans = soup.find_all("span", string="네이버뉴스")
@@ -33,20 +34,34 @@ async def get_news_from_naver(keyword, urls):
     content = ""
     for url in urls:
         async with AsyncClient() as client:
-            response = await client.get(url=url)
+            response = await client.get(url=url, timeout=httpx.Timeout(120.0))
         soup = BeautifulSoup(response.content, "html.parser")
 
         if "entertain.naver.com" in url:
             title_tag = soup.find("div", class_="ArticleHead_article_head_title__YUNFf")
             content_tag = soup.find("div", class_="_article_content")
-            title = title_tag.get_text(strip=True)
-            content = content_tag.get_text(strip=True)
+            if title_tag is None:
+                title = "뉴스의 상태가 잘못되었습니다."
+            else:
+                title = title_tag.get_text(strip=True)
+
+            if content_tag is None:
+                content = "뉴스의 상태가 잘못되었습니다."
+            else:
+                content = content_tag.get_text(strip=True)
 
         elif "n.news.naver.com" in url:
             title_tag = soup.find("div", class_="media_end_head_title")
             content_tag = soup.find("div", class_="newsct_article")
-            title = title_tag.find("span").get_text(strip=True)
-            content = content_tag.get_text(strip=True)
+            if title_tag is None:
+                title = "뉴스의 상태가 잘못되었습니다."
+            else:
+                title = title_tag.find("span").get_text(strip=True)
+
+            if content_tag is None:
+                content = "뉴스의 상태가 잘못되었습니다."
+            else:
+                content = content_tag.get_text(strip=True)
         elif "m.sports.naver.com" in url:
             title_tag = soup.find("h2", class_="ArticleHead_article_title__qh8GV")
             content_tag = soup.find(
