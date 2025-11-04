@@ -9,7 +9,7 @@ splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
 vstore = Chroma(
     collection_name="knowledge_base",
     embedding_function=UpstageEmbeddings(model="embedding-query"),
-    persist_directory="./chroma",
+    persist_directory="../chroma",
 )
 
 # 검색자
