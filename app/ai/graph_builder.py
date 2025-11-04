@@ -11,6 +11,7 @@ from app.ai.graph_def import (
     analyze_join_node,
     analyze_trend_reason,
     classify_and_package,
+    wait_node,
 )
 from app.classes.ai import GraphState
 
@@ -50,9 +51,10 @@ workflow.add_edge("entry_node", "retrieve_from_vdb")
 workflow.add_edge("retrieve_from_vdb", "validate_relevance")
 workflow.add_edge("validate_relevance", "analyze_join_node")
 
+
 # 조인 노드 -> 최종 분석 -> 요약 및 태그
 # 조인노드 체크
-workflow.add_node(WAIT, lambda state: state)
+workflow.add_node(WAIT, wait_node)
 workflow.add_conditional_edges(
     "analyze_join_node",
     lambda state: "analyze_trend_reason" if state.get("ready_for_analysis") else WAIT,
