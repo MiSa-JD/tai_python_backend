@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: ["master"] # 배포 트리거 브랜치
+    branches: ["main"] # 배포 트리거 브랜치
 
 jobs:
   deploy:
