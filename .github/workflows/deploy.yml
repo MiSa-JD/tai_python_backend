@@ -1,0 +1,51 @@
+name: Deploy
+
+on:
+  push:
+    branches: ["main"] # 배포 트리거 브랜치
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Down current process
+        run: |
+          docker compose down
+
+      - name: Backup current Docker image
+        run: |
+          if docker image inspect tai_python_backend:latest >/dev/null 2>&1; then
+            echo "Backing up current image..."
+            docker tag tai_python_backend:latest tai_python_backend:backup 2>/dev/null || true
+            echo "✅ Backup created"
+          else
+            echo "No existing image to backup"
+          fi
+
+      - name: Build and run
+        run: |
+          docker compose build
+          docker compose up -d
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          # 실패한 컨테이너 중지
+          docker compose down || true
+
+          # 백업 이미지가 있으면 복구
+          if docker image inspect tai_python_backend:backup >/dev/null 2>&1; then
+            echo "Restoring backup image..."
+            docker tag tai_python_backend:backup tai_python_backend:latest
+
+            # 백업 이미지로 재시작
+            docker compose up -d
+
+          else
+            echo "⚠️ No backup image found."
+            echo "Manual intervention required."
+          fi
