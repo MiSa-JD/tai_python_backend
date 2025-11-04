@@ -19,7 +19,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allowed_origins or ["http://localhost:8000"],
+        allow_origins=allowed_origins or ["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -46,7 +46,7 @@ def create_app() -> FastAPI:
         #     category="카테고리",
         #     refered=["링크1", "링크2"],
         # )
-        get_summarize = json.loads(output["summarize_and_classify"])
+        get_summarize = output["summarize_and_classify"]
 
         tmp = SearchResultOutput(
             keyword=output["keyword"],
