@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   app:
+    image: tai_python_backend:latest
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 300
     ports:
