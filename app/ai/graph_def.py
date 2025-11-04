@@ -15,7 +15,7 @@ async def entry_node(state: GraphState) -> GraphState:
 
 # 데이터 수집 부분
 async def collect_sources(state: GraphState) -> GraphState:
-    print(f"데이터 수집 중: {state['keyword']} | ")
+    print(f"크롤링 파트 \t | 데이터 수집 중: {state['keyword']} | ")
     # 1) keyword로 외부 소스 크롤링
     fetched_docs = await news_crawling(state["keyword"])
     # 2) 결과를 [{"keyword": ..., "link": ..., "content": ...}, ...] 형태로 수집
@@ -24,7 +24,7 @@ async def collect_sources(state: GraphState) -> GraphState:
 
 # 데이터 임베딩
 async def embed_and_store(state: GraphState) -> GraphState:
-    print(f"수집한 문서 임베딩 중: {state['keyword']} | ")
+    print(f"임베딩 파트 \t | 수집한 문서 임베딩 중: {state['keyword']} | ")
     # 문서별 embedding 계산 -> VDB에 저장
     raws = state.get("raw_documents", [])
     if len(raws) == 0:
@@ -38,7 +38,7 @@ async def embed_and_store(state: GraphState) -> GraphState:
 
 # VDB에서 Retrieve
 async def retrieve_from_vdb(state: GraphState) -> GraphState:
-    print(f"데이터 검색 중: {state['keyword']} | ")
+    print(f"RAG 파트 \t | 데이터 검색 중: {state['keyword']} | ")
     retrieved = await search_documents(state["keyword"])
 
     return {"retrieved_documents": retrieved}
@@ -46,7 +46,7 @@ async def retrieve_from_vdb(state: GraphState) -> GraphState:
 
 # 각 문서 검증
 async def validate_relevance(state: GraphState) -> GraphState:
-    print(f"각 문서 검증: {state['keyword']} | ")
+    print(f"RAG 파트 \t | 각 문서 검증: {state['keyword']} | ")
     validated = []
     if len(state.get("retrieved_documents", [])) == 0:
         return {
@@ -79,7 +79,7 @@ async def validate_relevance(state: GraphState) -> GraphState:
 
 # 원문 요약
 async def summarize_news_individual(state: GraphState) -> GraphState:
-    print(f"원문 요약 중: {state['keyword']} | ")
+    print(f"크롤링 파트 \t | 원문 요약 중: {state['keyword']} | ")
     summaries = []
     for doc in state.get("raw_documents", []):
         summary = await summarizer_llm(doc["content"])
@@ -92,7 +92,7 @@ async def summarize_news_individual(state: GraphState) -> GraphState:
 
 
 async def analyze_join_node(state: GraphState) -> GraphState:
-    print(f"조인 노드 도착: {state['keyword']} | ")
+    print(f"요약 파트 \t | 조인 노드 도착: {state['keyword']} | ")
     # 결과가 모두 준비 됐을 때 return, 아닐때는??
     completed = state.get("completed", {})
     ready = completed.get("news") and completed.get("validation")
@@ -109,7 +109,7 @@ async def wait_node(state):
 
 # 분석 및 이유 작성
 async def analyze_trend_reason(state: GraphState) -> GraphState:
-    print(f"결론 요약본 생성 중: {state['keyword']} | ")
+    print(f"요약 파트 \t | 결론 요약본 생성 중: {state['keyword']} | ")
     raw = await analyst_llm(
         keyword=state["keyword"],
         docs=state.get("validated_documents", []),
@@ -128,7 +128,7 @@ async def analyze_trend_reason(state: GraphState) -> GraphState:
 
 # 태그, 카테고리 붙이기
 async def classify_and_package(state: GraphState) -> GraphState:
-    print(f"태그, 카테고리 붙이는 중 {state['keyword']} | ")
+    print(f"요약 파트 \t | 태그, 카테고리 붙이는 중 {state['keyword']} | ")
     packaged = await classifier_llm(
         prompt=state["trend_analysis"].get("answer", ""),
     )
