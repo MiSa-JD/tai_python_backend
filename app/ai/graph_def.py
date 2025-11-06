@@ -1,4 +1,5 @@
 from langchain.schema import Document
+from langsmith import traceable
 from app.classes.ai import GraphState
 from app.crawler.crawling import news_crawling
 from app.ai.rag_functions import embed_documents, search_documents
@@ -8,12 +9,14 @@ import json
 
 # 노드 정의
 # 진입 노드
+@traceable
 async def entry_node(state: GraphState) -> GraphState:
     print(f"과정 시작: {state['keyword']} | ")
     return {}
 
 
 # 데이터 수집 부분
+@traceable
 async def collect_sources(state: GraphState) -> GraphState:
     print(f"크롤링 파트 \t | 데이터 수집 중: {state['keyword']} | ")
     # 1) keyword로 외부 소스 크롤링
@@ -23,6 +26,7 @@ async def collect_sources(state: GraphState) -> GraphState:
 
 
 # 데이터 임베딩
+@traceable
 async def embed_and_store(state: GraphState) -> GraphState:
     print(f"임베딩 파트 \t | 수집한 문서 임베딩 중: {state['keyword']} | ")
     # 문서별 embedding 계산 -> VDB에 저장
@@ -37,6 +41,7 @@ async def embed_and_store(state: GraphState) -> GraphState:
 
 
 # VDB에서 Retrieve
+@traceable
 async def retrieve_from_vdb(state: GraphState) -> GraphState:
     print(f"RAG 파트 \t | 데이터 검색 중: {state['keyword']} | ")
     retrieved = await search_documents(state["keyword"])
@@ -45,6 +50,7 @@ async def retrieve_from_vdb(state: GraphState) -> GraphState:
 
 
 # 각 문서 검증
+@traceable
 async def validate_relevance(state: GraphState) -> GraphState:
     print(f"RAG 파트 \t | 각 문서 검증: {state['keyword']} | ")
     validated = []
@@ -78,6 +84,7 @@ async def validate_relevance(state: GraphState) -> GraphState:
 
 
 # 원문 요약
+@traceable
 async def summarize_news_individual(state: GraphState) -> GraphState:
     print(f"크롤링 파트 \t | 원문 요약 중: {state['keyword']} | ")
     summaries = []
@@ -91,6 +98,7 @@ async def summarize_news_individual(state: GraphState) -> GraphState:
     }
 
 
+@traceable
 async def analyze_join_node(state: GraphState) -> GraphState:
     print(f"요약 파트 \t | 조인 노드 도착: {state['keyword']} | ")
     # 결과가 모두 준비 됐을 때 return, 아닐때는??
@@ -103,11 +111,13 @@ async def analyze_join_node(state: GraphState) -> GraphState:
     return {"ready_for_analysis": ready}
 
 
+@traceable
 async def wait_node(state):
     return state
 
 
 # 분석 및 이유 작성
+@traceable
 async def analyze_trend_reason(state: GraphState) -> GraphState:
     print(f"요약 파트 \t | 결론 요약본 생성 중: {state['keyword']} | ")
     raw = await analyst_llm(
@@ -127,6 +137,7 @@ async def analyze_trend_reason(state: GraphState) -> GraphState:
 
 
 # 태그, 카테고리 붙이기
+@traceable
 async def classify_and_package(state: GraphState) -> GraphState:
     print(f"요약 파트 \t | 태그, 카테고리 붙이는 중 {state['keyword']} | ")
     packaged = await classifier_llm(
