@@ -33,11 +33,16 @@ async def embed_and_store(state: GraphState) -> GraphState:
     raws = state.get("raw_documents", [])
     if len(raws) == 0:
         return {}
-    docs = await embed_documents(raws)
-    # 저장 후, vector_id 등 메타 정리
-    # 저장 결과 출력
-    print(f"** 검색어: '{state['keyword']}' 임베딩 성공 **\n")
-    return {"embedded_documents": docs}
+
+    async def _run(raws_copy, keyword):
+        try:
+            await embed_documents(raws)
+            print(f"** 검색어: '{state['keyword']}' 임베딩 성공 **\n")
+        except Exception as exc:
+            print(f"임베딩 파트 \t | 임베딩 실패: {state['keyword']}")
+            print(exc)
+
+    return {}
 
 
 # VDB에서 Retrieve
