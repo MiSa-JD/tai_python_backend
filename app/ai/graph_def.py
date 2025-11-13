@@ -1,4 +1,5 @@
 from langchain.schema import Document
+from openai import RateLimitError
 from langsmith import traceable
 from app.classes.ai import GraphState
 from app.crawler.crawling import news_crawling
@@ -36,11 +37,13 @@ async def embed_and_store(state: GraphState) -> GraphState:
 
     async def _run(raws_copy, keyword):
         try:
-            await embed_documents(raws)
-            print(f"** 검색어: '{state['keyword']}' 임베딩 성공 **\n")
+            await embed_documents(raws_copy)
+            print(f"** 검색어: '{keyword}' 임베딩 성공 **\n")
         except Exception as exc:
-            print(f"임베딩 파트 \t | 임베딩 실패: {state['keyword']}")
+            print(f"임베딩 파트 \t | 임베딩 실패: {keyword}")
             print(exc)
+
+    _run(raws, state["keyword"])
 
     return {}
 
@@ -72,7 +75,7 @@ async def validate_relevance(state: GraphState) -> GraphState:
         try:
             judgment = json.loads(raw)
         except json.JSONDecodeError:
-            print("검증자가 json 형식으로 대답하지 않았습니다!!: %r", raw)
+            print("검증자가 json 형식으로 대답하지 않았습니다!!:\n", raw)
             continue
         if judgment["validation"] == "yes":
             validated.append(
@@ -125,18 +128,27 @@ async def wait_node(state):
 @traceable
 async def analyze_trend_reason(state: GraphState) -> GraphState:
     print(f"요약 파트 \t | 결론 요약본 생성 중: {state['keyword']} | ")
-    raw = await analyst_llm(
-        keyword=state["keyword"],
-        docs=state.get("validated_documents", []),
-        summaries=state.get("news_summaries", []),
-    )
-    if raw.find("```json") != -1:
-        raw = raw.replace("```json", "")
-    if raw.find("```") != -1:
-        raw = raw.replace("```", "")
+    try:
+        raw = await analyst_llm(
+            keyword=state["keyword"],
+            docs=state.get("validated_documents", []),
+            summaries=state.get("news_summaries", []),
+        )
+    except RateLimitError as exc:
+        print(f"요약 파트 요청 횟수 초과!: {state['keyword']}\n{exc}")
+        return {
+            "trend_analysis": {
+                "answer": "요청 횟수가 초과되어 문서 내용 정리에 실패했습니다. 관리자에게 문의 부탁드립니다.",
+                "link": [
+                    "https://github.com/Team8-ToyProject4/tai_python_backend/issues"
+                ],
+            }
+        }
+    raw = raw.replace("```json", "").replace("```", "")
     try:
         trend_json = json.loads(raw)
     except json.JSONDecodeError:
+        print(f"분석가가 Json 형식으로 대답하지 않았습니다!: {state['keyword']}")
         return await analyze_trend_reason(state=state)
     return {"trend_analysis": trend_json}
 
@@ -145,9 +157,17 @@ async def analyze_trend_reason(state: GraphState) -> GraphState:
 @traceable
 async def classify_and_package(state: GraphState) -> GraphState:
     print(f"요약 파트 \t | 태그, 카테고리 붙이는 중 {state['keyword']} | ")
-    packaged = await classifier_llm(
-        prompt=state["trend_analysis"].get("answer", ""),
-    )
+    try:
+        packaged = await classifier_llm(
+            prompt=state["trend_analysis"].get("answer", ""),
+        )
+    except RateLimitError as exc:
+        print(f"요약 파트 요청 횟수 초과!: {state['keyword']}\n{exc}")
+        return {
+            "summarize": "요청 횟수가 초과되어 문서 내용 분류에 실패했습니다. 관리자에게 문의 부탁드립니다.",
+            "tags": ["정리 실패"],
+            "category": "에러",
+        }
     if packaged.find("```json") != -1 or packaged.find("```") != -1:
         packaged = packaged.replace("```json", "").replace("```", "")
     try:
