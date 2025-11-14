@@ -6,6 +6,7 @@ from app.crawler.crawling import news_crawling
 from app.ai.rag_functions import embed_documents, search_documents
 from app.ai.llm_caller import validator_llm, analyst_llm, classifier_llm, summarizer_llm
 import json
+import asyncio
 
 
 # 노드 정의
@@ -96,9 +97,23 @@ async def validate_relevance(state: GraphState) -> GraphState:
 async def summarize_news_individual(state: GraphState) -> GraphState:
     print(f"크롤링 파트 \t | 원문 요약 중: {state['keyword']} | ")
     summaries = []
-    for doc in state.get("raw_documents", []):
-        summary = await summarizer_llm(doc["content"])
-        summaries.append({"link": doc["link"], "summary": summary})
+    docs = state.get("raw_documents", [])
+
+    if not docs:
+        return {
+            "news_summaries": "네이버 뉴스가 올바른 문서를 제공하지 않았습니다.",
+            "completed": {**state.get("completed", {}), "news": True},
+        }
+
+    semaphore = asyncio.Semaphore(3)
+
+    async def summarize_doc(doc):
+        async with semaphore:
+            summary = await summarizer_llm(doc["content"])
+            return {"link": doc["link"], "summary": summary}
+
+    summaries = await asyncio.gather(*(summarize_doc(doc) for doc in docs))
+
     print(f"** 검색어: '{state['keyword']}' 크롤링 프로세스 완료 **\n")
     return {
         "news_summaries": summaries,
